@@ -176,38 +176,36 @@ def get_cves():
     cursor = conn.cursor(dictionary=True)
 
     # Get all the records
-    query = "SELECT * FROM cves"
+    query = "SELECT * FROM cves WHERE 1=1"
     # Get the total records count
-    count_query = "SELECT COUNT(*) as count FROM cves"
+    count_query = "SELECT COUNT(*) as count FROM cves WHERE 1=1"
     params = []
     count_params = []
 
-    # If cve_id filter is present
+    # Apply filters only if they are provided
     if cve_id:
-        query += " WHERE cve_id LIKE %s"
-        count_query += " WHERE cve_id LIKE %s"
+        query += " AND cve_id LIKE %s"
+        count_query += " AND cve_id LIKE %s"
         params.append(f"%{cve_id}%")
         count_params.append(f"%{cve_id}%")
 
-    # If year filter is present
     if year:
-        query += " WHERE YEAR(published_date) = %s"
-        count_query += " WHERE YEAR(published_date) = %s"
+        query += " AND YEAR(published_date) = %s"
+        count_query += " AND YEAR(published_date) = %s"
         params.append(year)
         count_params.append(year)
 
-    # If days filter is present
     if days:
-        query += " WHERE published_date >= NOW() - INTERVAL %s DAY"
-        count_query += " WHERE published_date >= NOW() - INTERVAL %s DAY"
+        query += " AND published_date >= NOW() - INTERVAL %s DAY"
+        count_query += " AND published_date >= NOW() - INTERVAL %s DAY"
         params.append(days)
         count_params.append(days)
 
-    # Pagination
+    # Add pagination
     query += " LIMIT %s OFFSET %s"
     params.extend([results_per_page, offset])
 
-    # Execute the queries
+    # Execute queries
     cursor.execute(query, params)
     cves = cursor.fetchall()
 
