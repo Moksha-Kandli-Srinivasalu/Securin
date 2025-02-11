@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE List</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr {
+            cursor: pointer;
+        }
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .pagination {
+            display: flex;
+            align-items: center;
+        }
+        .pagination-left {
+            margin-right: 20px; 
+        }
+        .pagination-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .pagination button {
+            margin: 0 5px;
+            padding: 8px 16px;
+            width: 40px;  
+            height: 36px; 
+            font-size: 14px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .pagination span {
+            margin: 0 5px;
+        }
+        .results-per-page {
+            margin-right: 20px;
+        }
+        .range-display {
+            margin-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">CVE List</h1>
+    <p><strong>Total Records:</strong> {{ total_records }}</p>
+
+    <!-- Filter Form -->
+    <form style="text-align: right;" method="GET" action="/cves/list">
+        <label for="cve_id">CVE ID:</label>
+        <input type="text" id="cve_id" name="cve_id" placeholder="CVE-2024-1234" value="{{ request.args.get('cve_id', '') }}">
+        &nbsp;&nbsp;&nbsp;&nbsp;
+
+        <label for="year">Year:</label>
+        <select id="year" name="year">
+            <option value="">All</option>
+            {% for y in range(1980, 2026) %}
+                <option value="{{ y }}" {% if request.args.get('year') == y|string %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        
+        <label for="days">Last N Days:</label>
+        <input type="number" id="days" name="days" min="1" value="{{ request.args.get('days', '') }}">
+        &nbsp;
+
+        <button type="submit">Apply Filters</button>
+        &nbsp;&nbsp;
+    </form>
+    <br>
+    <table>
+        <thead>
+            <tr>
+                <th>CVE ID</th>
+                <th>Source Identifier</th>
+                <th>Published Date</th>
+                <th>Last Modified Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cve in cves %}
+            <tr onClick="window.location.href='/cves/{{ cve['cve_id'] }}'">
+                <td>{{ cve['cve_id'] }}</td>
+                <td>{{ cve['source_identifier'] }}</td>
+                <td class="date">{{ cve['published_date'] }}</td>
+                <td class="date">{{ cve['last_modified_date'] }}</td>
+                <td>{{ cve['status'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination-container">
+        <div class="pagination-left">
+            <div class="results-per-page">
+                <br>
+                <label for="resultsPerPage">Results Per Page: </label>
+                <select id="resultsPerPage" name="resultsPerPage" onchange="updateResultsPerPage()">
+                    <option value="10" {% if results_per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="50" {% if results_per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if results_per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="pagination-right">
+            <div class="range-display" id="rangeDisplay">
+                {{ start_record }}-{{ end_record }} of {{ total_records }} records
+            </div>
+
+            <button onclick="changePage('prev')">&lt;</button>
+            
+            {% set start_page = (current_page - 2) if (current_page - 2) > 0 else 1 %}
+            {% set end_page = (current_page + 2) if (current_page + 2) <= total_pages else total_pages %}
+            {% if end_page - start_page < 4 %}
+                {% if start_page > 1 %}
+                    {% set start_page = end_page - 4 %}
+                {% else %}
+                    {% set end_page = start_page + 4 %}
+                {% endif %}
+            {% endif %}
+            
+            {% for i in range(start_page, end_page + 1) %}
+                <button onclick="goToPage({{ i }})" {% if i == current_page %}style="font-weight: bold;"{% endif %}>{{ i }}</button>
+            {% endfor %}
+            
+            <button onclick="changePage('next')">&gt;</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to format the date to '01 Oct 1988' format
+        function formatDate(dateStr) {
+            const options = { year: 'numeric', month: 'short', day: '2-digit' };
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-GB', options);  // "01 Oct 1988"
+        }
+    
+        // Function to format all dates in the table
+        window.addEventListener('load', function() {
+            const dates = document.querySelectorAll('.date');
+            dates.forEach(date => {
+                date.textContent = formatDate(date.textContent);
+            });
+        });
+
+        function updateResultsPerPage() {
+            var selectedValue = document.getElementById("resultsPerPage").value;
+            var cveId = document.getElementById("cve_id").value;
+            var year = document.getElementById("year").value;
+            var days = document.getElementById("days").value;
+            window.location.href = "/cves/list?results_per_page=" + selectedValue + "&page=1&cve_id=" + cveId + "&year=" + year + "&days=" + days;
+        }
+        
+        function goToPage(page) {
+            var resultsPerPage = document.getElementById("resultsPerPage").value;
+            var cveId = document.getElementById("cve_id").value;
+            var year = document.getElementById("year").value;
+            var days = document.getElementById("days").value;
+            window.location.href = "/cves/list?results_per_page=" + resultsPerPage + "&page=" + page + "&cve_id=" + cveId + "&year=" + year + "&days=" + days;
+        }
+        
+        function changePage(direction) {
+            var currentPage = {{ current_page }};
+            var totalPages = {{ total_pages }};
+            if (direction === 'prev' && currentPage > 1) {
+                goToPage(currentPage - 1);
+            } else if (direction === 'next' && currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        }
+
+        window.onload = function() {
+            var resultsPerPage = {{ results_per_page }};
+            var currentPage = {{ current_page }};
+            var totalRecords = {{ total_records }};
+            
+            var startRecord = (currentPage - 1) * resultsPerPage + 1;
+            var endRecord = currentPage * resultsPerPage;
+            
+            if (endRecord > totalRecords) {
+                endRecord = totalRecords;
+            }
+
+            var rangeDisplay = document.getElementById("rangeDisplay");
+            rangeDisplay.innerHTML = startRecord + "-" + endRecord + " of " + totalRecords + " records";
+        };
+    </script>
+</body>
+</html>

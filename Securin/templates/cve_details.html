@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+
+    <h1>CVE Details: {{ details.id }}</h1>
+    <p><strong>Description:</strong> <br> <br> {{ details.description }}</p>
+    <p><strong>CVSS V2 Metrics:</strong></p>
+    <p><strong>Severity:</strong> {{ details.severity }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Score:</strong> {{ details.score }}</p>
+    <p><strong>Vector String:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{{ details.vectorString }}</p>
+
+    <table>
+        <tr>
+            <th style="text-align: center;">Access Vector</th>
+            <th style="text-align: center;">Access Complexity</th>
+            <th style="text-align: center;">Authentication</th>
+            <th style="text-align: center;">Confidentiality Impact</th>
+            <th style="text-align: center;">Integrity Impact</th>
+            <th style="text-align: center;">Availability Impact</th>
+        </tr>
+        <tr>
+            <td style="text-align: center;">{{ details.impact.accessVector }}</td>
+            <td style="text-align: center;">{{ details.impact.accessComplexity }}</td>
+            <td style="text-align: center;">{{ details.impact.authentication }}</td>
+            <td style="text-align: center;">{{ details.impact.confidentialityImpact }}</td>
+            <td style="text-align: center;">{{ details.impact.integrityImpact }}</td>
+            <td style="text-align: center;">{{ details.impact.availabilityImpact }}</td>
+        </tr>
+    </table>
+
+    <h2>Scores :</h2>
+    <p><strong>Exploitability Score:</strong> {{ details.exploitabilityScore }}</p>
+    <p><strong>Impact Score:</strong> {{ details.impactScore }}</p>
+
+    <h2>CPE :</h2>
+    <table style="width: 70%;">
+        <tr>
+            <th style="text-align: center;">Criteria</th>
+            <th style="text-align: center;">Match Criteria ID</th>
+            <th style="text-align: center;">Vulnerable</th>
+        </tr>
+        {% for cpe in details.cpe %}
+        <tr>
+            <td style="text-align: center;">{{ cpe.criteria }}</td>
+            <td style="text-align: center;">{{ cpe.matchCriteriaId }}</td>
+            <td style="text-align: center;">{{ cpe.vulnerable }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>
